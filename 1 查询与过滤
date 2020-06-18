@@ -1,0 +1,57 @@
+https://www.elastic.co/guide/en/elasticsearch/reference/7.x/query-filter-context.html
+一、顾名思义，查询的时候用query，过滤的时候用filter
+1 查询内容时：
+查询语句解决的问题是，“这个文档doc有多匹配我的查询语句”--因为query一般都有score评分。
+除了判断文档是否匹配外，查询语句还会计算“_score”来表示文档doc相对于其他文档的匹配程度
+只要查询语句通过了编辑器，查询的内容就始终是有效的？
+2 过滤内容时；
+过滤解决的问题是“文档是否匹配查询语句”，返回的结果只是个布尔值，“是”或“否”，不计分。一般用来过滤结构数据。
+比如 时间戳是不是在15年-16年
+status状态位是否为 “published”
+频繁使用的过滤条件会被自动存到缓存里，以提高效率
+
+举例！
+四合一，
+title字段是search
+content字段是elasticsearch
+status**
+源码如下
+GET /_search
+{
+  "query": { 
+    "bool": { 
+      "must": [
+        { "match": { "title":   "Search"        }},
+        { "match": { "content": "Elasticsearch" }}],
+      "filter": [ 
+        { "term":  { "status": "published" }},
+        { "range": { "publish_date": { "gte": "2015-01-01" }}}
+      ]
+    }
+  }
+}
+
+ES对我来说有个很难的点，确定嵌套的位置
+所以我要每段源码都写明
+这里最顶层是query bool{must，should}这个很明显
+must下面是查询体
+{ 查询类别type：match，然后是冒号来写查询提的内容，具体内容是“标题title”等于“search” }
+然后逗号，开始must下面的第二个查询体
+filter 过滤，是跟must一个层级的，这个有点不好理解，或者可以说是：比这里的查询体type高一等级。
+下面是我的query context，@timestamp支持时间的计算，比如>‘2020-05-01’
+GET _search
+{
+  "query":{
+    "bool":{
+      "must": [
+        {"match":{"companyName":"123123"}},
+        {"match":{"companyCode":"999000"}}],
+      "filter":[
+        {"term":{"recordModule.keyword":"模块名 "}},
+        {"range":{"@timestamp":{"gte":"2020-06-01"}}}
+        ]
+    }
+  
+    }
+}
+
